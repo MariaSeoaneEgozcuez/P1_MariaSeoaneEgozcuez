@@ -1,30 +1,32 @@
-**-> PlayerController.cs**
+**-> CamController.cs**
+Este script controla la cámara para que siga al jugador durante el juego. Se define una variable target que apunta al jugador y, en LateUpdate, se coloca la cámara en la posición del target más un desplazamiento, de forma que la cámara quede detrás y ligeramente elevada, ofreciendo una vista en tercera persona. Así, la cámara sigue constantemente al jugador manteniendo distancia y angulación para que la visualización sea cómoda y clara.
 
-Este es el script que permite el control del jugador y define sus características. Primero, se recogen en el Start las referencias del Rigidbody (para la física) y el Animator (para las animaciones). Tras esto, pasamos al Update, donde iniciamos con el movimiento del 
-jugador. Para esto, leemos el input (horizontal -> A/D o flechas derecha/izquierda | vertical -> W/S o flechas arriba/abajo). Con esto, calculamos la dirección normalizada y si hay movimiento, orientamos el personaje hacia esa dirección (Quaternion.LookRotation). Aplicamos
-dicha velocidad a nuestro Rigidbody para provocar el movimiento físico y añadimos la funcionalidad de duplicar la velocidad si presionamos el shift. Para la ejecución del salto, nos aseguramos de que se esté presionando el input de la barra espaciadora y a la vez que 
-nuestro jugador tenga el atributo isGrounded en True (para evitar salto infinito). Si esto se cumple, y estamos en un objeto de tag "Floor", aplicamos una fuerza hacia arriba (AddForce con Impulse) para ejecutar el salto. Ahora, controlamos los parámetros del Animator para ejecutar las animaciones.
-"Walk" se activa si hay movimiento y "Jump" se activa si la velocidad vertical es distinta de 0 (ya que eso significaría que estamos saltando). 
-
-**-> MovingPlatform.cs**
-
-Este es el script que ejecuta el movimiento de la plataforma que debe moverse horizontalmente (de izquierda a derecha) con un movimiento continuo, oscilando entre dos posiciones. Para esto, defino en el script dos variables de posición, la primera "m_posinicial",
-cogerá la posición inicial de la plataforma. La segunda, "m_posfinal" cogerá la posición original desplazándola 2 unidades a la derecha.
-
-Ahora, en un FixedUpdate hacemos el movimiento continuo. Utilizo la función Vector3.lerp para poder mover la plataforma de forma controlada, suave y constante entre la posición final e inicial. Utilizo la variable "lerpValue" para indicar hacia qué posición debe moverse la
-plataforma. Este valor oscila entre 0 y 1, de forma que cuando llega a 1, cambia de dirección y viceversa, de forma que la plataforma se mueva continuamente. La velocidad de movimiento estará controlada por la variable "m_speed".
-
-Utilizamos un OnCollisionStay para evitar que el jugador se caiga de la plataforma en movimiento, de forma que si un GameObject con la tag "Player" entrá en contacto con la plataforma, el GameObject se hace hijo de la plataforma. De esta forma, el jugador se moverá con la
-plataforma, pero conservará la funcionalidad propia de poder moverse individualmente. Cuando el GameObject deje de estar en contacto con la plataforma, dejará de ser hija de esta.
+**-> Coleccionable.cs**
+Este script gestiona las monedas del juego. Cuando el jugador entra en contacto con el objeto, detectado mediante OnTriggerEnter, comprobamos si el objeto tiene un componente PlayerController. Si es así, el coleccionable se destruye automáticamente y se llama al método addMonedas() del GameManager para incrementar el contador de monedas del jugador. Para funcionar correctamente, el objeto debe tener un Collider con Is Trigger activado, el jugador debe tener un PlayerController y el GameManager debe estar configurado como singleton con el método addMonedas() implementado.
 
 **-> FallingPlatform.cs**
+Este script controla la plataforma que cae tras ser pisada por el jugador y vuelve a su posición inicial tras un tiempo de espera. En Start() guardamos la posición inicial (posInicial) y calculamos la posición final a la que debe caer (posFinal). Cuando detectamos colisión mediante OnCollisionEnter, comprobamos que el contacto sea desde arriba y que el objeto tenga el tag "Player", además de que la plataforma no esté ya en movimiento. Si se cumplen estas condiciones, activamos colision = true y llamamos a la corrutina Timer(). Dentro de esta corrutina, esperamos un segundo, movemos la plataforma hacia posFinal con Vector3.MoveTowards, esperamos otro segundo al llegar abajo, la subimos de nuevo a posInicial y finalmente permitimos que pueda volver a activarse cambiando colision = false.
 
-Este es el script que ejecuta el movimiento de la plataforma que debe caer tras caer el jugador en ella. Debe caer y volver a su posición original tras una espera. En el Start guardamos la posición inicial de la plataforma ("posInicial") y la posición final a la que debe "caer"
-("posfinal"). Cuando detectemos colisión a través de un OnCollisionEnter, obtenemos la normal del contacto. Si la colisión no viene desde arriba, la ignoramos. Sin embargo, si: 1. el objeto tiene el tag "Player", 2. no está ya en proceso de "caer" y 3. el contacto es desde arriba,
-entonces activamos collision = true e iniciamos una corrutina con StartCoroutine para controlar la caída. En nuestra corrutina, esperamos 1 segundo con Timer(), hacemos que la posición "caiga" hacia posfinal usando Vector3.MoveTowards, hacemos que la plataforma espere de nuevo
-otro segundo al llegar abajo, subimos la plataforma de nuevo a posinicial y permitimos que la plataforma pueda volver a activarse cambiando collision = false.
+**-> Flag.cs**
+Este script gestiona la meta del juego. Cuando el jugador entra en contacto con la bandera mediante OnTriggerEnter, comprobamos que tenga el tag "Player". Si es así, cargamos automáticamente la escena "Victory" usando SceneManager.LoadScene. Para que funcione correctamente, la bandera debe tener un Collider con Is Trigger activado y el jugador debe tener el tag "Player". Así, al alcanzar la meta, el juego cambia de escena y muestra la pantalla de victoria.
 
-**-> CamController.cs**
+**-> GameManager.cs**
+Este script gestiona el estado global del juego, incluyendo las monedas recolectadas, las vidas del jugador y el manejo de escenas. Implementa un singleton para asegurarse de que solo exista una instancia durante todo el juego, usando DontDestroyOnLoad para mantener los datos entre escenas. Controla los contadores de monedas y vidas y actualiza automáticamente los textos de la interfaz con TextMeshProUGUI. Al recolectar una moneda se llama a addMonedas(), y al perder una vida se ejecuta removeVidas(), que reduce el contador, llama al método Respawn() del jugador si quedan vidas, o reinicia el nivel y resetea los contadores si no quedan vidas. Además, mediante OnSceneLoaded, reasigna las referencias a los objetos de la escena para evitar errores al cargar la escena, asegurando que los textos y el jugador estén correctamente vinculados.
 
-Este es el script que controla la cámara para que siga a nuestro jugador. Tenemos una variable target, que es nuestro jugador. En un LateUpdate, colocamos la cámara en la posición del target con un desplazamiento para que quede visualmente lo suficientemente lejos del jugador
-y con una angulación para tener una tercera persona. De esta forma, seguimos continuamente la posición del jugador desde esa distancia.
+**-> MenuManager.cs**
+Este script gestiona la interacción del menú principal. Su función principal es Jugar(), que carga la escena "Nivel1" cuando el jugador pulsa el botón de iniciar partida mediante SceneManager.LoadScene.
+
+**-> MovingPlatform.cs**
+Este script controla plataformas que se mueven horizontalmente de manera continua entre dos posiciones. En Start() se definen la posición inicial (m_posinicial) y la posición final (m_posfinal) desplazándola, por ejemplo, 2 unidades a la derecha. En FixedUpdate() usamos Vector3.Lerp para mover la plataforma de manera suave y controlada entre estas posiciones. La variable lerpValue determina la dirección y oscila entre 0 y 1, invirtiendo la dirección al llegar a los extremos, creando un movimiento continuo. Además, en OnCollisionStay hacemos que el jugador se convierta en hijo de la plataforma mientras esté en contacto, evitando que se caiga y permitiendo que se mueva con la plataforma, y en OnCollisionExit se separa de la plataforma para recuperar su independencia.
+
+**-> Obstaculo.cs**
+Este script representa los obstáculos que hacen perder vidas al jugador. Cuando el jugador entra en el trigger del obstáculo mediante OnTriggerEnter, comprobamos que tenga un componente PlayerController. Si es así, llamamos al método removeVidas() del GameManager para restarle una vida al jugador y ejecutar la lógica de respawn o reinicio del nivel según corresponda. Para funcionar correctamente, el obstáculo debe tener un Collider con Is Trigger activado y el jugador debe tener un PlayerController.
+
+**-> PlayerController.cs**
+Este script permite controlar al jugador y define su movimiento y comportamiento. En Start() se recogen referencias al Rigidbody para la física y al Animator para las animaciones. En Update(), se lee el input del jugador para moverse horizontal y verticalmente, calculando la dirección normalizada y rotando el jugador hacia ella con Quaternion.LookRotation. La velocidad se aplica al Rigidbody y puede duplicarse al presionar shift. Para el salto, se comprueba que se presione la barra espaciadora y que isGrounded sea true; si es así y el jugador está en un objeto con tag "Floor", se aplica una fuerza hacia arriba con AddForce tipo Impulse. Además, se actualizan los parámetros del Animator: "Walk" se activa si hay movimiento y "Jump" se activa si la velocidad vertical es distinta de 0, controlando las animaciones de caminar y saltar.
+
+**-> UIAdapter.cs**
+Este script actualiza automáticamente la interfaz de usuario con el estado del jugador. Se suscribe a los eventos onMonedasChanged y onVidasChanged del GameManager para reflejar cambios en tiempo real. Cuando se recolecta una moneda, UpdateMonedas() actualiza el texto correspondiente, y cuando se pierde una vida, updateVidas() actualiza el contador de vidas. Para funcionar correctamente, los campos texto_monedas y texto_vidas deben estar asignados a los elementos TextMeshProUGUI en el Inspector.
+
+**-> VictoryManager.cs**
+Estos scripts gestionan la pantalla de victoria del juego. Proporcionan dos funciones principales: Reintentar(), que recarga la escena "Nivel1" y reinicia las monedas y vidas del jugador a sus valores iniciales, y VolverAlMenu(), que carga la escena "Menu" y también reinicia los contadores de monedas y vidas. Se colocan en un objeto de la escena de victoria y se vinculan a los botones del UI para permitir que el jugador pueda reintentar el nivel o volver al menú principal de forma sencilla.
