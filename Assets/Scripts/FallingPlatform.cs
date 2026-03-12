@@ -1,53 +1,42 @@
 using System.Collections;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class FallingPlatform : MonoBehaviour
 {
-    private float vel = 1.0f;
+    private float vel = 2f;
     private Vector3 posInicial;
     private Vector3 posFinal;
-    private bool colision = false; 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    private bool colision = false;
+
     void Start()
     {
         posInicial = transform.position;
-        posFinal = new Vector3(transform.position.x, 0, transform.position.z);   
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-       
+        posFinal = posInicial + Vector3.down * 2f;
     }
 
     void OnCollisionEnter(Collision collision)
+{
+    if (collision.gameObject.CompareTag("Player") && !colision)
     {
-        Vector3 normal = collision.GetContact(0).normal;
-        if (normal.y < 0.5f)        {
-            return;
-        }
-        if(collision.gameObject.CompareTag("Player") && !colision && normal == collision.gameObject.transform.up)
-        {
-            colision = true;
-            StartCoroutine(Timer(1));
-        }
+        collision.transform.SetParent(transform); 
+        colision = true;
+        StartCoroutine(Timer(1));
     }
+}
 
-    void OnCollisionExit(Collision collision)
+void OnCollisionExit(Collision collision)
+{
+    if (collision.gameObject.CompareTag("Player"))
     {
-        if(collision.gameObject.CompareTag("Player"))
-        {
-            //collision.gameObject.transform.SetParent(null);
-        }
+        collision.transform.SetParent(null); 
     }
+}
 
-    private IEnumerator Timer(float duracion = 1)
+    IEnumerator Timer(float duracion)
     {
         yield return new WaitForSeconds(duracion);
-        
-        while (transform.position.y > posFinal.y + 0.01f)
+
+        while (transform.position.y > posFinal.y)
         {
             transform.position = Vector3.MoveTowards(transform.position, posFinal, vel * Time.deltaTime);
             yield return null;
@@ -55,7 +44,7 @@ public class FallingPlatform : MonoBehaviour
 
         yield return new WaitForSeconds(duracion);
 
-        while (transform.position.y < posInicial.y - 0.01f)
+        while (transform.position.y < posInicial.y)
         {
             transform.position = Vector3.MoveTowards(transform.position, posInicial, vel * Time.deltaTime);
             yield return null;
