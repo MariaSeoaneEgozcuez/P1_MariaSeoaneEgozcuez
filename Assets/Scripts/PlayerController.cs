@@ -5,7 +5,7 @@ public class PlayerController : MonoBehaviour
 {
     private Rigidbody m_RigidBody;
     private Animator m_Animator;
-
+    private Vector3 respawnPoint;
     private bool isGrounded;
     
     [SerializeField] private  float speed = 2.0f;
@@ -16,6 +16,8 @@ public class PlayerController : MonoBehaviour
     {
         m_RigidBody = this.GetComponent<Rigidbody>();
         m_Animator = this.GetComponent<Animator>();
+        respawnPoint = transform.position;
+
     }
 
     // Update is called once per frame
@@ -83,5 +85,12 @@ public class PlayerController : MonoBehaviour
         {
             isGrounded = false;
         }
+    }
+
+    public void Respawn()
+    {
+        transform.position = respawnPoint;
+        m_RigidBody.linearVelocity = Vector3.zero;
+        m_RigidBody.angularVelocity = Vector3.zero;
     }
 }
